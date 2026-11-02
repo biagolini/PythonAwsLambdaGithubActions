@@ -1,0 +1,34 @@
+name: 'Deploy AWS Lambda'
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  deploy_lambda:
+    name: 'Deploy Lambda Function'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: 'Package Lambda Function'
+        run: |
+          zip -r function.zip lambda_function.py
+
+      - name: 'Deploy to AWS Lambda'
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ vars.AWS_LAMBDA_NAME }} \
+            --zip-file fileb://function.zip \
+            --region ${{ vars.AWS_REGION }}
